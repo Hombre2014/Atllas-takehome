@@ -198,8 +198,42 @@ const AuthRouter: IRoute = {
     });
 
     // Log out
-    router.post('/logout', (req, res) => {
-      // TODO
+    router.post('/logout', async (req, res) => {
+      const { sessionToken } = req.cookies;
+
+      if (!sessionToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'No session token provided.',
+        });
+      }
+
+      try {
+        const result = await Session.destroy({
+          where: { token: sessionToken },
+        });
+
+        if (result === 0) {
+          // No session was found with that token
+          return res.status(404).json({
+            success: false,
+            message: 'Invalid session token.',
+          });
+        }
+
+        res.clearCookie('SESSION_TOKEN');
+
+        return res.json({
+          success: true,
+          message: 'Logged out successfully.',
+        });
+      } catch (error) {
+        console.error('Logout failed.', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to log out.',
+        });
+      }
     });
 
     return router;
