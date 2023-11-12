@@ -1,9 +1,10 @@
 import IRoute from '../types/IRoute';
-import {Router} from 'express';
-import {compareSync} from 'bcrypt';
-import {attachSession} from '../middleware/auth';
-import {sequelize, Session, User} from '../services/db';
-import {randomBytes} from 'crypto';
+import { Router } from 'express';
+import { compareSync } from 'bcrypt';
+import { attachSession } from '../middleware/auth';
+import { sequelize, Session, User } from '../services/db';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
 
 const AuthRouter: IRoute = {
   route: '/auth',
@@ -15,8 +16,8 @@ const AuthRouter: IRoute = {
     router.get('/', (req, res) => {
       if (req.session?.token?.id) {
         const {
-          token: {token, ...session},
-          user: {password, ...user},
+          token: { token, ...session },
+          user: { password, ...user },
         } = req.session;
         return res.json({
           success: true,
@@ -36,10 +37,7 @@ const AuthRouter: IRoute = {
 
     // Attempt to log in
     router.post('/login', async (req, res) => {
-      const {
-        username,
-        password,
-      } = req.body;
+      const { username, password } = req.body;
       if (!username || !password) {
         return res.status(400).json({
           success: false,
@@ -50,9 +48,9 @@ const AuthRouter: IRoute = {
       const user = await User.findOne({
         where: sequelize.where(
           sequelize.fn('lower', sequelize.col('username')),
-          sequelize.fn('lower', username),
+          sequelize.fn('lower', username)
         ),
-      }).catch(err => console.error('User lookup failed.', err));
+      }).catch((err) => console.error('User lookup failed.', err));
 
       // Ensure the user exists. If not, return an error.
       if (!user) {
@@ -63,7 +61,9 @@ const AuthRouter: IRoute = {
       }
 
       // Ensure the password is correct. If not, return an error.
-      if (!compareSync(password, user.dataValues.password)) {
+      const passwordToCompare = await user.dataValues.password;
+
+      if (!compareSync(password, passwordToCompare)) {
         return res.status(401).json({
           success: false,
           message: 'Invalid username/password.',
@@ -72,7 +72,7 @@ const AuthRouter: IRoute = {
 
       // We now know the user is valid so it's time to mint a new session token.
       const sessionToken = randomBytes(32).toString('hex');
-      let session;
+      let session: any; // Added to appease typescript
       try {
         // Persist the token to the database.
         session = await Session.create({
@@ -91,7 +91,7 @@ const AuthRouter: IRoute = {
       // We set the cookie on the response so that browser sessions will
       // be able to use it.
       res.cookie('SESSION_TOKEN', sessionToken, {
-        expires: new Date(Date.now() + (3600 * 24 * 7 * 1000)), // +7 days
+        expires: new Date(Date.now() + 3600 * 24 * 7 * 1000), // +7 days
         secure: false,
         httpOnly: true,
       });
@@ -111,8 +111,90 @@ const AuthRouter: IRoute = {
     });
 
     // Attempt to register
-    router.post('/register', (req, res) => {
-      // TODO
+    router.post('/register', async (req, res) => {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing username or password.',
+        });
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findOne({
+        where: sequelize.where(
+          sequelize.fn('lower', sequelize.col('username')),
+          sequelize.fn('lower', username)
+        ),
+      }).catch((err) => {
+        console.error('User lookup failed.', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Internal server error.',
+        });
+      });
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'Username already taken.',
+        });
+      }
+
+      // Hash the password
+      const hashedPassword = bcrypt.hash(password, 10); // 10 is the salt rounds
+
+      // Create new user
+      let newUser: any;
+      try {
+        newUser = await User.create({
+          username,
+          password: hashedPassword,
+        });
+      } catch (e) {
+        console.error('Failed to create user.', e);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create user.',
+        });
+      }
+
+      // Generate a session token
+      const sessionToken = randomBytes(32).toString('hex');
+      let session: any;
+      try {
+        // Persist the token to the database
+        session = await Session.create({
+          token: sessionToken,
+          user: newUser.user.dataValues.id,
+        });
+      } catch (e) {
+        console.error('Failed to create session.', e);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create session.',
+        });
+      }
+
+      // Set the cookie
+      console.log('Session:', session);
+      console.log('Session Token:', sessionToken);
+      console.log('Response:', res);
+      res.cookie('SESSION_TOKEN', sessionToken, {
+        expires: new Date(Date.now() + 3600 * 24 * 7 * 1000), // 7 days
+        secure: false, // Should be true in production if using HTTPS
+        httpOnly: true,
+      });
+
+      // Return the token
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully.',
+        data: {
+          token: sessionToken,
+        },
+      });
     });
 
     // Log out
