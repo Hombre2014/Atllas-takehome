@@ -2,7 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StackScreens } from '../../App';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback } from 'react';
-import { Button, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 import tw from 'twrnc';
 

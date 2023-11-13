@@ -72,7 +72,7 @@ const AuthRouter: IRoute = {
 
       // We now know the user is valid so it's time to mint a new session token.
       const sessionToken = randomBytes(32).toString('hex');
-      let session: any; // Added to appease typescript
+      let session;
       try {
         // Persist the token to the database.
         session = await Session.create({
@@ -113,6 +113,7 @@ const AuthRouter: IRoute = {
     // Attempt to register
     router.post('/register', async (req, res) => {
       const { username, password } = req.body;
+      console.log('From back end:', username, password);
 
       if (!username || !password) {
         return res.status(400).json({
@@ -138,20 +139,21 @@ const AuthRouter: IRoute = {
       if (existingUser) {
         return res.status(409).json({
           success: false,
-          message: 'Username already taken.',
+          message: 'The Username is already taken.',
         });
       }
 
       // Hash the password
-      const hashedPassword = bcrypt.hash(password, 10); // 10 is the salt rounds
-
+      const hashedPassword = bcrypt.hashSync(password, 10); // 10 is the salt rounds
       // Create new user
-      let newUser: any;
+      let newUser;
       try {
         newUser = await User.create({
           username,
-          password: hashedPassword,
+          password: String(hashedPassword),
+          registered: new Date(),
         });
+        console.log('Created new user.', newUser);
       } catch (e) {
         console.error('Failed to create user.', e);
         return res.status(500).json({
@@ -162,12 +164,12 @@ const AuthRouter: IRoute = {
 
       // Generate a session token
       const sessionToken = randomBytes(32).toString('hex');
-      let session: any;
+      let session;
       try {
         // Persist the token to the database
         session = await Session.create({
           token: sessionToken,
-          user: newUser.user.dataValues.id,
+          user: newUser.dataValues.id,
         });
       } catch (e) {
         console.error('Failed to create session.', e);
@@ -178,9 +180,6 @@ const AuthRouter: IRoute = {
       }
 
       // Set the cookie
-      console.log('Session:', session);
-      console.log('Session Token:', sessionToken);
-      console.log('Response:', res);
       res.cookie('SESSION_TOKEN', sessionToken, {
         expires: new Date(Date.now() + 3600 * 24 * 7 * 1000), // 7 days
         secure: false, // Should be true in production if using HTTPS

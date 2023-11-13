@@ -12,7 +12,7 @@ export type IUser = {
   id: number;
   registered: Date;
   username: string;
-  password: string | Promise<string>;
+  password: string;
   displayName: string;
 };
 
