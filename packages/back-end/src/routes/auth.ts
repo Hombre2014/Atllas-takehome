@@ -1,9 +1,10 @@
 import IRoute from '../types/IRoute';
-import {Router} from 'express';
-import {compareSync} from 'bcrypt';
-import {attachSession} from '../middleware/auth';
-import {sequelize, Session, User} from '../services/db';
-import {randomBytes} from 'crypto';
+import { Router } from 'express';
+import { compareSync } from 'bcrypt';
+import { attachSession } from '../middleware/auth';
+import { sequelize, Session, User } from '../services/db';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
 
 const AuthRouter: IRoute = {
   route: '/auth',
@@ -15,8 +16,8 @@ const AuthRouter: IRoute = {
     router.get('/', (req, res) => {
       if (req.session?.token?.id) {
         const {
-          token: {token, ...session},
-          user: {password, ...user},
+          token: { token, ...session },
+          user: { password, ...user },
         } = req.session;
         return res.json({
           success: true,
@@ -36,10 +37,7 @@ const AuthRouter: IRoute = {
 
     // Attempt to log in
     router.post('/login', async (req, res) => {
-      const {
-        username,
-        password,
-      } = req.body;
+      const { username, password } = req.body;
       if (!username || !password) {
         return res.status(400).json({
           success: false,
@@ -50,9 +48,9 @@ const AuthRouter: IRoute = {
       const user = await User.findOne({
         where: sequelize.where(
           sequelize.fn('lower', sequelize.col('username')),
-          sequelize.fn('lower', username),
+          sequelize.fn('lower', username)
         ),
-      }).catch(err => console.error('User lookup failed.', err));
+      }).catch((err) => console.error('User lookup failed.', err));
 
       // Ensure the user exists. If not, return an error.
       if (!user) {
@@ -63,7 +61,9 @@ const AuthRouter: IRoute = {
       }
 
       // Ensure the password is correct. If not, return an error.
-      if (!compareSync(password, user.dataValues.password)) {
+      const passwordToCompare = await user.dataValues.password;
+
+      if (!compareSync(password, passwordToCompare)) {
         return res.status(401).json({
           success: false,
           message: 'Invalid username/password.',
@@ -91,7 +91,7 @@ const AuthRouter: IRoute = {
       // We set the cookie on the response so that browser sessions will
       // be able to use it.
       res.cookie('SESSION_TOKEN', sessionToken, {
-        expires: new Date(Date.now() + (3600 * 24 * 7 * 1000)), // +7 days
+        expires: new Date(Date.now() + 3600 * 24 * 7 * 1000), // +7 days
         secure: false,
         httpOnly: true,
       });
@@ -111,13 +111,128 @@ const AuthRouter: IRoute = {
     });
 
     // Attempt to register
-    router.post('/register', (req, res) => {
-      // TODO
+    router.post('/register', async (req, res) => {
+      const { username, password } = req.body;
+      console.log('From back end:', username, password);
+
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing username or password.',
+        });
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findOne({
+        where: sequelize.where(
+          sequelize.fn('lower', sequelize.col('username')),
+          sequelize.fn('lower', username)
+        ),
+      }).catch((err) => {
+        console.error('User lookup failed.', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Internal server error.',
+        });
+      });
+
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'The Username is already taken.',
+        });
+      }
+
+      // Hash the password
+      const hashedPassword = bcrypt.hashSync(password, 10); // 10 is the salt rounds
+      // Create new user
+      let newUser;
+      try {
+        newUser = await User.create({
+          username,
+          password: String(hashedPassword),
+          registered: new Date(),
+        });
+        console.log('Created new user.', newUser);
+      } catch (e) {
+        console.error('Failed to create user.', e);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create user.',
+        });
+      }
+
+      // Generate a session token
+      const sessionToken = randomBytes(32).toString('hex');
+      let session;
+      try {
+        // Persist the token to the database
+        session = await Session.create({
+          token: sessionToken,
+          user: newUser.dataValues.id,
+        });
+      } catch (e) {
+        console.error('Failed to create session.', e);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create session.',
+        });
+      }
+
+      // Set the cookie
+      res.cookie('SESSION_TOKEN', sessionToken, {
+        expires: new Date(Date.now() + 3600 * 24 * 7 * 1000), // 7 days
+        secure: false, // Should be true in production if using HTTPS
+        httpOnly: true,
+      });
+
+      // Return the token
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully.',
+        data: {
+          token: sessionToken,
+        },
+      });
     });
 
     // Log out
-    router.post('/logout', (req, res) => {
-      // TODO
+    router.post('/logout', async (req, res) => {
+      const { sessionToken } = req.cookies;
+
+      if (!sessionToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'No session token provided.',
+        });
+      }
+
+      try {
+        const result = await Session.destroy({
+          where: { token: sessionToken },
+        });
+
+        if (result === 0) {
+          // No session was found with that token
+          return res.status(404).json({
+            success: false,
+            message: 'Invalid session token.',
+          });
+        }
+
+        res.clearCookie('SESSION_TOKEN');
+
+        return res.json({
+          success: true,
+          message: 'Logged out successfully.',
+        });
+      } catch (error) {
+        console.error('Logout failed.', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to log out.',
+        });
+      }
     });
 
     return router;
