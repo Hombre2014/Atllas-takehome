@@ -1,5 +1,4 @@
-import React from 'react';
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text } from 'react-native';
 import { Form, FormItem, Label } from 'react-native-form-component';
@@ -26,7 +25,9 @@ const validationSchema = yup.object({
     .required('Password is required'),
 });
 
-const Register = ({}: NativeStackScreenProps<StackScreens, 'Register'>) => {
+const Register = ({
+  navigation,
+}: NativeStackScreenProps<StackScreens, 'Register'>) => {
   type SignUpResponse = {
     token: string;
   };
@@ -74,6 +75,7 @@ const Register = ({}: NativeStackScreenProps<StackScreens, 'Register'>) => {
 
       console.log('Token:', responseData.data.token);
       console.log('Response Data:', responseData);
+      navigation.navigate('Home');
     } catch (error: any) {
       setError(error.message);
     }
