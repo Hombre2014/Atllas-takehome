@@ -1,8 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StackScreens } from '../../App';
 import { WebView as NativeWebView } from 'react-native-webview';
+
+import tw from 'twrnc';
 
 export default function WebView({}: NativeStackScreenProps<
   StackScreens,
@@ -13,18 +15,13 @@ export default function WebView({}: NativeStackScreenProps<
     process.env.EXPO_PUBLIC_WEBAPP_ROOT
   );
   return (
-    <View style={styles.container}>
+    <View style={tw`flex-1`}>
       <NativeWebView
-        originWhitelist={['*']}
+        // originWhitelist={['*']}
         source={{ uri: process.env.EXPO_PUBLIC_WEBAPP_ROOT as string }}
+        // sharedCookiesEnabled={true}
       />
       <StatusBar style="auto" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
