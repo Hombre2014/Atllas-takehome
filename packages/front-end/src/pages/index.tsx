@@ -10,6 +10,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // status. if the token is valid, then we'll get back the user's info and pass
   // it to the HomeProps object.
   if (ctx.req.cookies?.SESSION_TOKEN) {
+    console.log('SESSION_TOKEN:', ctx.req.cookies.SESSION_TOKEN);
     const authRes = await fetch(
       `http://${process.env.BACK_END_HOST}:50000/auth`,
       {
@@ -28,8 +29,11 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
       console.debug('authRes,', authRes);
     }
 
+    console.log('authRes', authRes);
+
     const { success, data } = authRes;
     if (success && data?.user?.id) {
+      console.log('Success:', success, 'Data?user?.id:', data.user.id);
       return {
         props: {
           sess: {
@@ -59,11 +63,16 @@ export type HomeProps = {
     displayName: string;
   };
 };
+
 export default function Home({ sess }: HomeProps) {
+  console.log('Sess:', sess);
   return (
     <>
       <Head>
-        <title>Atllas Takehome</title>
+        <title>
+          Atllas - Take Home Assignment for React Native and Javascript
+          Developer
+        </title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/public/favicon.ico" />
       </Head>
