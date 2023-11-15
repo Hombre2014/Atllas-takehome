@@ -119,7 +119,6 @@ const AuthRouter: IRoute = {
     // Attempt to register
     router.post('/register', async (req, res) => {
       const { username, password, displayName } = req.body;
-      console.log('From back end:', username, password, displayName);
 
       if (!username || !password) {
         return res.status(400).json({
@@ -161,7 +160,6 @@ const AuthRouter: IRoute = {
           password: String(hashedPassword),
           registered: new Date(),
         });
-        console.log('Created new user.', newUser);
       } catch (e) {
         console.error('Failed to create user.', e);
         return res.status(500).json({
@@ -180,10 +178,9 @@ const AuthRouter: IRoute = {
           user: newUser.dataValues.id,
         });
       } catch (e) {
-        console.error('Failed to create session.', e);
         return res.status(500).json({
           success: false,
-          message: 'Failed to create session.',
+          message: 'Failed to create a session.',
         });
       }
 
@@ -205,18 +202,12 @@ const AuthRouter: IRoute = {
     });
 
     router.get('/test-cookie', (req, res) => {
-      console.log(req.cookies);
       res.send(req.cookies);
     });
 
     // Log out
     router.post('/logout', async (req, res) => {
       const sessionToken = req.cookies.SESSION_TOKEN;
-
-      console.log('Headers:', req.headers);
-      console.log('Body:', req.body);
-      console.log('Cookies - Token:', req.cookies.SESSION_TOKEN);
-      console.log('From back end:', sessionToken);
 
       if (!sessionToken) {
         return res.status(400).json({
