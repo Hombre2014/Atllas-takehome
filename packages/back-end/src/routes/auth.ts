@@ -79,9 +79,12 @@ const AuthRouter: IRoute = {
           token: sessionToken,
           user: user.dataValues.id,
         });
+        console.log('Session created:', session);
       } catch (e) {
         return passError('Failed to create session.', e, res);
       }
+
+      console.error('Response body:', res);
 
       if (!session) {
         // Something broke on the database side. Not much we can do.
@@ -96,11 +99,14 @@ const AuthRouter: IRoute = {
         httpOnly: true,
       });
 
+      console.error('Response cookie:', res.cookie);
       // We return the cookie to the consumer so that non-browser
       // contexts can utilize it easily. This is a convenience for the
       // take-home so you don't have to try and extract the cookie from
       // the response headers etc. Just know that this is a-standard
       // in non-oauth flows :)
+
+      // console.error('Response body:', res);
       return res.json({
         success: true,
         message: 'Authenticated Successfully.',
@@ -144,7 +150,8 @@ const AuthRouter: IRoute = {
       }
 
       // Hash the password
-      const hashedPassword = bcrypt.hashSync(password, 10); // 10 is the salt rounds
+      const hashedPassword = bcrypt.hashSync(password, 10);
+
       // Create new user
       let newUser;
       try {
@@ -196,9 +203,19 @@ const AuthRouter: IRoute = {
       });
     });
 
+    router.get('/test-cookie', (req, res) => {
+      console.log(req.cookies);
+      res.send(req.cookies);
+    });
+
     // Log out
     router.post('/logout', async (req, res) => {
-      const { sessionToken } = req.cookies;
+      const sessionToken = req.cookies.SESSION_TOKEN;
+
+      console.log('Headers:', req.headers);
+      console.log('Body:', req.body);
+      console.log('Cookies - Token:', req.cookies.SESSION_TOKEN);
+      console.log('From back end:', sessionToken);
 
       if (!sessionToken) {
         return res.status(400).json({
