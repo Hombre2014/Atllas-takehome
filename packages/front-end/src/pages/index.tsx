@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import Head from 'next/head';
 import { Inter } from '@next/font/google';
@@ -10,19 +9,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // if SESSION_TOKEN is set, then hit our back-end to check authentication
   // status. if the token is valid, then we'll get back the user's info and pass
   // it to the HomeProps object.
-  let sessionToken = ctx.req.cookies?.SESSION_TOKEN;
-
-  console.log('SESSION_TOKEN in index Next.js:', sessionToken);
-
-  // Check if the token is passed as a query parameter
-  if (!sessionToken && ctx.query.token) {
-    sessionToken = ctx.query.token as string;
-  }
-
-  console.log('BACKEND_HOST', process.env.BACK_END_HOST);
-
-  if (sessionToken) {
-    // console.log('SESSION_TOKEN:', ctx.req.cookies.SESSION_TOKEN);
+  if (ctx.req.cookies?.SESSION_TOKEN) {
     const authRes = await fetch(
       `http://${process.env.BACK_END_HOST}:50000/auth`,
       {
@@ -41,11 +28,8 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
       console.debug('authRes,', authRes);
     }
 
-    console.log('authRes', authRes);
-
     const { success, data } = authRes;
     if (success && data?.user?.id) {
-      console.log('Success:', success, 'Data?user?.id:', data.user.id);
       return {
         props: {
           sess: {
@@ -75,17 +59,11 @@ export type HomeProps = {
     displayName: string;
   };
 };
-
 export default function Home({ sess }: HomeProps) {
-  console.log('Sess before return:', sess);
-
   return (
     <>
       <Head>
-        <title>
-          Atllas - Take Home Assignment for React Native and Javascript
-          Developer
-        </title>
+        <title>Atllas Takehome</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/public/favicon.ico" />
       </Head>
@@ -98,7 +76,6 @@ export default function Home({ sess }: HomeProps) {
             sess?.displayName || sess?.username || 'stranger'
           }?`}</p>
         </div>
-        <div className="p-4"></div>
       </main>
     </>
   );
