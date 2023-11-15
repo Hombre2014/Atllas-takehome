@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -44,8 +45,7 @@ const Login = ({
     }
   }, [error]);
 
-  const signIn = async (values: FormValues): Promise<void> => {
-    console.log('Values in SignIn:', values);
+  const signIn = async (values: FormValues, actions: any): Promise<void> => {
     setError('');
 
     const serverUrl = 'http://10.0.2.2:50000/auth/login';
@@ -67,14 +67,12 @@ const Login = ({
         throw new Error(responseData.message || 'Network response was not ok.');
       }
 
-      console.log('Token:', responseData.data.token);
-      console.log('Response Data:', responseData);
-
-      navigation.navigate('Home');
-      // Additional logic for successful login, such as redirecting the user or storing the token, can be added here
+      await AsyncStorage.setItem('token', responseData.data.token);
+      navigation.push('Home');
     } catch (error: any) {
       setError(error.message);
     }
+    actions.resetForm();
   };
 
   return (
@@ -110,7 +108,6 @@ const Login = ({
                 <View style={tw`flex flex-row justify-between`}>
                   <Label
                     text="Username"
-                    // isRequired
                     asterik
                     textStyle={{
                       color: '#858597',

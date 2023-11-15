@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text } from 'react-native';
 import { Form, FormItem, Label } from 'react-native-form-component';
@@ -19,10 +20,8 @@ const validationSchema = yup.object({
     .trim()
     .min(3, 'Name must be at least 3 characters')
     .required('Name is required'),
-  password: yup
-    .string()
-    .min(4, 'Password must be at least 4 characters long')
-    .required('Password is required'),
+  password: yup.string().min(4, 'Password must be at least 4 characters long'),
+  // .required('Password is required'),
 });
 
 const Register = ({
@@ -51,8 +50,7 @@ const Register = ({
     }
   }, [error]);
 
-  const signUp = async (values: FormValues): Promise<void> => {
-    console.log('Values in SignUp:', values);
+  const signUp = async (values: FormValues, actions: any): Promise<void> => {
     setError('');
     const serverUrl = 'http://10.0.2.2:50000/auth/register';
     try {
@@ -73,15 +71,14 @@ const Register = ({
         throw new Error(responseData.message || 'Network response was not ok.');
       }
 
-      console.log('Token:', responseData.data.token);
-      console.log('Response Data:', responseData);
-      navigation.navigate('Home');
+      await AsyncStorage.setItem('token', responseData.data.token);
+
+      navigation.push('Home');
     } catch (error: any) {
       setError(error.message);
     }
+    actions.resetForm();
   };
-
-  console.log('State Error:', error);
 
   return (
     <View style={tw`flex-1 justify-center items-center`}>
@@ -116,7 +113,6 @@ const Register = ({
                 <View style={tw`flex flex-row justify-between`}>
                   <Label
                     text="Username"
-                    // isRequired
                     asterik
                     textStyle={{
                       color: '#858597',
@@ -132,8 +128,6 @@ const Register = ({
                 </View>
                 <FormItem
                   style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
-                  // username="username"
-                  // type="username"
                   onBlur={handleBlur('username')}
                   ref={usernameInput}
                   value={username}
@@ -143,7 +137,6 @@ const Register = ({
                 <View style={tw`flex flex-row justify-between`}>
                   <Label
                     text="Password "
-                    // isRequired
                     asterik
                     textStyle={{
                       color: '#858597',
@@ -159,14 +152,11 @@ const Register = ({
                 </View>
                 <FormItem
                   style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
-                  // name="password"
-                  // type="password"
                   autoCapitalize="none"
                   onBlur={handleBlur('password')}
                   ref={passwordInput}
                   value={password}
                   onChangeText={handleChange('password')}
-                  // style={{ borderColor: '#B8B8D2', borderWidth: 1 }}
                   labelStyle={{ textColor: 858597, textSize: 48 }}
                   placeholder="********"
                   secureTextEntry={true}

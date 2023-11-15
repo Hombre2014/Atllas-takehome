@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import Head from 'next/head';
 import { Inter } from '@next/font/google';
@@ -9,8 +10,19 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   // if SESSION_TOKEN is set, then hit our back-end to check authentication
   // status. if the token is valid, then we'll get back the user's info and pass
   // it to the HomeProps object.
-  if (ctx.req.cookies?.SESSION_TOKEN) {
-    console.log('SESSION_TOKEN:', ctx.req.cookies.SESSION_TOKEN);
+  let sessionToken = ctx.req.cookies?.SESSION_TOKEN;
+
+  console.log('SESSION_TOKEN in index Next.js:', sessionToken);
+
+  // Check if the token is passed as a query parameter
+  if (!sessionToken && ctx.query.token) {
+    sessionToken = ctx.query.token as string;
+  }
+
+  console.log('BACKEND_HOST', process.env.BACK_END_HOST);
+
+  if (sessionToken) {
+    // console.log('SESSION_TOKEN:', ctx.req.cookies.SESSION_TOKEN);
     const authRes = await fetch(
       `http://${process.env.BACK_END_HOST}:50000/auth`,
       {
@@ -65,7 +77,8 @@ export type HomeProps = {
 };
 
 export default function Home({ sess }: HomeProps) {
-  console.log('Sess:', sess);
+  console.log('Sess before return:', sess);
+
   return (
     <>
       <Head>
@@ -85,6 +98,7 @@ export default function Home({ sess }: HomeProps) {
             sess?.displayName || sess?.username || 'stranger'
           }?`}</p>
         </div>
+        <div className="p-4"></div>
       </main>
     </>
   );
