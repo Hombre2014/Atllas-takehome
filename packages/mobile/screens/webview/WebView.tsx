@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { StackScreens } from '../../App';
 import { WebView as NativeWebView } from 'react-native-webview';
-
 import tw from 'twrnc';
 
 export default function WebView({}: NativeStackScreenProps<

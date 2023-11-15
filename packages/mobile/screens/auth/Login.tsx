@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text } from 'react-native';
@@ -7,7 +7,6 @@ import { Form, FormItem, Label } from 'react-native-form-component';
 import { Formik } from 'formik';
 import { StackScreens } from '../../App';
 import * as yup from 'yup';
-
 import tw from 'twrnc';
 
 interface FormValues {
@@ -31,8 +30,6 @@ const Login = ({
   navigation,
 }: NativeStackScreenProps<StackScreens, 'Login'>) => {
   const [error, setError] = useState('');
-  const usernameInput = useRef();
-  const passwordInput = useRef();
   const userInfo: FormValues = { username: '', password: '' };
 
   useEffect(() => {
@@ -47,7 +44,6 @@ const Login = ({
 
   const signIn = async (values: FormValues, actions: any): Promise<void> => {
     setError('');
-
     const serverUrl = 'http://10.0.2.2:50000/auth/login';
     try {
       const response = await fetch(serverUrl, {
@@ -92,14 +88,13 @@ const Login = ({
           isSubmitting,
         }) => {
           const { username, password } = values;
-
           return (
             <React.Fragment>
               <Form
                 style={tw`w-3/4`}
                 buttonText="Login"
                 buttonStyle={{
-                  backgroundColor: '#008CEA',
+                  backgroundColor: isSubmitting ? '#687178' : '#008CEA',
                 }}
                 buttonTextStyle={{ color: 'white' }}
                 onButtonPress={!isSubmitting ? handleSubmit : undefined}
@@ -124,10 +119,9 @@ const Login = ({
                 <FormItem
                   style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                   onBlur={handleBlur('username')}
-                  ref={usernameInput}
                   value={username}
                   onChangeText={handleChange('username')}
-                  placeholder="Joe Dow"
+                  placeholder="username"
                 />
                 <View style={tw`flex flex-row justify-between`}>
                   <Label
@@ -149,7 +143,6 @@ const Login = ({
                   style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                   autoCapitalize="none"
                   onBlur={handleBlur('password')}
-                  ref={passwordInput}
                   value={password}
                   onChangeText={handleChange('password')}
                   labelStyle={{ textColor: 858597, textSize: 48 }}

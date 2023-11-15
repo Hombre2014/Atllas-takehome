@@ -12,6 +12,7 @@ import tw from 'twrnc';
 interface FormValues {
   username: string;
   password: string;
+  displayName: string;
 }
 
 const validationSchema = yup.object({
@@ -20,24 +21,21 @@ const validationSchema = yup.object({
     .trim()
     .min(3, 'Name must be at least 3 characters')
     .required('Name is required'),
-  password: yup.string().min(4, 'Password must be at least 4 characters long'),
-  // .required('Password is required'),
+  displayName: yup
+    .string()
+    .trim()
+    .min(3, 'Name must be at least 3 characters')
+    .max(20, 'Name must be at most 20 characters'),
+  password: yup
+    .string()
+    .min(4, 'Password must be at least 4 characters long')
+    .required('Password is required'),
 });
 
 const Register = ({
   navigation,
 }: NativeStackScreenProps<StackScreens, 'Register'>) => {
-  type SignUpResponse = {
-    token: string;
-  };
-
-  type ErrorResponse = {
-    message: string;
-  };
-
-  const usernameInput = useRef();
-  const passwordInput = useRef();
-  const userInfo: FormValues = { username: '', password: '' };
+  const userInfo: FormValues = { username: '', password: '', displayName: '' };
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -62,6 +60,7 @@ const Register = ({
         body: JSON.stringify({
           username: values.username,
           password: values.password,
+          displayName: values.displayName,
         }),
       });
 
@@ -72,7 +71,6 @@ const Register = ({
       }
 
       await AsyncStorage.setItem('token', responseData.data.token);
-
       navigation.push('Home');
     } catch (error: any) {
       setError(error.message);
@@ -96,19 +94,40 @@ const Register = ({
           handleSubmit,
           isSubmitting,
         }) => {
-          const { username, password } = values;
-
+          const { username, password, displayName } = values;
           return (
             <React.Fragment>
               <Form
                 style={tw`w-3/4`}
                 buttonText="Create Account"
                 buttonStyle={{
-                  backgroundColor: '#008CEA',
+                  backgroundColor: isSubmitting ? '#687178' : '#008CEA',
                 }}
                 buttonTextStyle={{ color: 'white' }}
                 onButtonPress={!isSubmitting ? handleSubmit : undefined}
               >
+                <View style={tw`flex flex-row justify-between`}>
+                  <Label
+                    text="Full name"
+                    textStyle={{
+                      color: '#858597',
+                      fontSize: 14,
+                      fontWeight: 400,
+                    }}
+                  />
+                  {touched.displayName && errors.displayName ? (
+                    <Text style={tw`text-red-500 text-xs`}>
+                      {errors.displayName}
+                    </Text>
+                  ) : null}
+                </View>
+                <FormItem
+                  style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
+                  onBlur={handleBlur('displayName')}
+                  value={displayName}
+                  onChangeText={handleChange('displayName')}
+                  placeholder="Joe Dow"
+                />
                 {error && <Text style={{ color: 'red' }}>{error}</Text>}
                 <View style={tw`flex flex-row justify-between`}>
                   <Label
@@ -129,10 +148,9 @@ const Register = ({
                 <FormItem
                   style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                   onBlur={handleBlur('username')}
-                  ref={usernameInput}
                   value={username}
                   onChangeText={handleChange('username')}
-                  placeholder="Joe Dow"
+                  placeholder="username"
                 />
                 <View style={tw`flex flex-row justify-between`}>
                   <Label
@@ -154,7 +172,6 @@ const Register = ({
                   style={tw`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50`}
                   autoCapitalize="none"
                   onBlur={handleBlur('password')}
-                  ref={passwordInput}
                   value={password}
                   onChangeText={handleChange('password')}
                   labelStyle={{ textColor: 858597, textSize: 48 }}

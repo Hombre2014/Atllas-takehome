@@ -118,8 +118,8 @@ const AuthRouter: IRoute = {
 
     // Attempt to register
     router.post('/register', async (req, res) => {
-      const { username, password } = req.body;
-      console.log('From back end:', username, password);
+      const { username, password, displayName } = req.body;
+      console.log('From back end:', username, password, displayName);
 
       if (!username || !password) {
         return res.status(400).json({
@@ -157,6 +157,7 @@ const AuthRouter: IRoute = {
       try {
         newUser = await User.create({
           username,
+          displayName,
           password: String(hashedPassword),
           registered: new Date(),
         });

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
+import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { StackScreens } from '../../App';
-import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
-
-import tw from 'twrnc';
 import NavigationButton from '../../components/NavigationButton';
+import { StatusBar } from 'expo-status-bar';
+import { StackScreens } from '../../App';
+import tw from 'twrnc';
 
 export default function Home({
   navigation,
@@ -28,14 +27,9 @@ export default function Home({
     fetchToken();
   }, [token, setToken]);
 
-  console.log('Token in Home:', token);
-
   const logout = async () => {
     try {
-      // Retrieve the stored token
       const token = await AsyncStorage.getItem('token');
-
-      // Make a request to the backend to invalidate the token
       const serverUrl = 'http://10.0.2.2:50000/auth/logout'; // Replace with your actual logout endpoint
 
       const response = await fetch(serverUrl, {
@@ -52,17 +46,11 @@ export default function Home({
         throw new Error(responseData.message || 'Network response was not ok.');
       }
 
-      // Clear the token from AsyncStorage
       await AsyncStorage.removeItem('token');
-
-      console.log('Token in Home after removing it from AsyncStorage:', token);
-
-      // Navigate to the login screen or update the state
       navigation.push('Home');
     } catch (error) {
       console.error('Error during logout', error);
     }
-
     setToken(null);
   };
 
