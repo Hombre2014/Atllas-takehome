@@ -1,4 +1,4 @@
-# Atllas, Inc. Take home
+# Atllas, Inc. Take home assignment
 
 Welcome! We're excited that you’ve applied to be an engineer, and we’re looking
 forward to evaluating your take home! This project is meant to showcase your
