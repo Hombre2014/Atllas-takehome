@@ -79,12 +79,9 @@ const AuthRouter: IRoute = {
           token: sessionToken,
           user: user.dataValues.id,
         });
-        console.log('Session created:', session);
       } catch (e) {
         return passError('Failed to create session.', e, res);
       }
-
-      console.error('Response body:', res);
 
       if (!session) {
         // Something broke on the database side. Not much we can do.
